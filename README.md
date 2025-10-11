@@ -161,6 +161,17 @@ mythra-program/
 │   ├── deploy-devnet.sh           # Legacy devnet deployment
 │   ├── test-devnet.sh             # Devnet testing
 │   └── fund-test-keypairs.sh      # Pre-fund test accounts
+├── docs/                          # Documentation
+│   ├── CREATE_EVENT_README.md
+│   ├── CREATE_TICKET_TIER_README.md
+│   ├── REGISTER_MINT_README.md
+│   ├── MARK_TICKET_USED_README.md
+│   ├── UPDATE_EVENT_README.md
+│   ├── WITHDRAW_FUNDS_README.md
+│   ├── DEVNET_DEPLOYMENT_GUIDE.md
+│   ├── DEVNET_TEST_RESULTS.md
+│   ├── CONTRIBUTING.md
+│   └── SECURITY.md
 ├── .env                           # Environment config (DO NOT COMMIT)
 ├── .env.example                   # Template for .env
 ├── Anchor.toml                    # Anchor configuration
@@ -226,20 +237,22 @@ anchor test --skip-local-validator --provider.cluster devnet
 - **Localnet**: 79/79 tests passing ✅
 - **Devnet**: 35/35 tests passing (44 blocked by airdrop limits) ⚠️
 
-See `DEVNET_TEST_RESULTS.md` for detailed devnet test analysis.
+See [docs/DEVNET_TEST_RESULTS.md](./docs/DEVNET_TEST_RESULTS.md) for detailed devnet test analysis.
 
 ## Documentation
 
 Detailed documentation for each instruction:
 
-- [CREATE_EVENT_README.md](./CREATE_EVENT_README.md) - Event creation
-- [CREATE_TICKET_TIER_README.md](./CREATE_TICKET_TIER_README.md) - Ticket tier management
-- [REGISTER_MINT_README.md](./REGISTER_MINT_README.md) - Ticket minting
-- [MARK_TICKET_USED_README.md](./MARK_TICKET_USED_README.md) - Check-in system
-- [UPDATE_EVENT_README.md](./UPDATE_EVENT_README.md) - Event updates
-- [WITHDRAW_FUNDS_README.md](./WITHDRAW_FUNDS_README.md) - Fund withdrawal
-- [DEVNET_DEPLOYMENT_GUIDE.md](./DEVNET_DEPLOYMENT_GUIDE.md) - Devnet deployment guide
-- [DEVNET_TEST_RESULTS.md](./DEVNET_TEST_RESULTS.md) - Devnet test analysis
+- [CREATE_EVENT_README.md](./docs/CREATE_EVENT_README.md) - Event creation
+- [CREATE_TICKET_TIER_README.md](./docs/CREATE_TICKET_TIER_README.md) - Ticket tier management
+- [REGISTER_MINT_README.md](./docs/REGISTER_MINT_README.md) - Ticket minting
+- [MARK_TICKET_USED_README.md](./docs/MARK_TICKET_USED_README.md) - Check-in system
+- [UPDATE_EVENT_README.md](./docs/UPDATE_EVENT_README.md) - Event updates
+- [WITHDRAW_FUNDS_README.md](./docs/WITHDRAW_FUNDS_README.md) - Fund withdrawal
+- [DEVNET_DEPLOYMENT_GUIDE.md](./docs/DEVNET_DEPLOYMENT_GUIDE.md) - Devnet deployment guide
+- [DEVNET_TEST_RESULTS.md](./docs/DEVNET_TEST_RESULTS.md) - Devnet test analysis
+- [CONTRIBUTING.md](./docs/CONTRIBUTING.md) - Contribution guidelines
+- [SECURITY.md](./docs/SECURITY.md) - Security best practices
 
 ## Security Considerations
 

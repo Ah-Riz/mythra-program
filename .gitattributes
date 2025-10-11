@@ -1,0 +1,25 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Scripts should always use LF
+*.sh text eol=lf
+
+# TypeScript/JavaScript
+*.ts text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+
+# Rust
+*.rs text eol=lf
+*.toml text eol=lf
+
+# Documentation
+*.md text eol=lf
+
+# Binary files
+*.so binary
+*.wasm binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary

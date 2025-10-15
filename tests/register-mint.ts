@@ -16,12 +16,18 @@ import {
 } from "@solana/spl-token";
 import { MythraProgram } from "../target/types/mythra_program";
 import { assert } from "chai";
+import { initializeProvider } from "./utils/provider";
 
 describe("register_mint", () => {
-  const provider = anchor.AnchorProvider.env();
-  anchor.setProvider(provider);
+  const provider = initializeProvider();
 
   const program = anchor.workspace.MythraProgram as Program<MythraProgram>;
+  
+  before(async () => {
+    console.log("\n🔧 Test Environment Setup");
+    const balance = await provider.connection.getBalance(provider.wallet.publicKey);
+    console.log(`Balance: ${(balance / 1e9).toFixed(4)} SOL`);
+  });
   
   const organizer = provider.wallet;
   const buyer = Keypair.generate();
@@ -169,7 +175,7 @@ describe("register_mint", () => {
 
   describe("valid registration", () => {
     it("registers an externally minted NFT as a ticket", async () => {
-      const eventId = "event-register-001";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       
@@ -213,7 +219,7 @@ describe("register_mint", () => {
     });
 
     it("registers multiple NFTs for different buyers", async () => {
-      const eventId = "event-register-multi";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       
@@ -252,7 +258,7 @@ describe("register_mint", () => {
 
   describe("duplicate prevention", () => {
     it("fails when registering the same mint twice", async () => {
-      const eventId = "event-register-duplicate";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       
@@ -303,7 +309,7 @@ describe("register_mint", () => {
 
   describe("mismatched owner handling", () => {
     it("fails when token account owner doesn't match buyer", async () => {
-      const eventId = "event-register-wrong-owner";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       
@@ -336,7 +342,7 @@ describe("register_mint", () => {
     });
 
     it("fails when token account has wrong mint", async () => {
-      const eventId = "event-register-wrong-mint";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       
@@ -371,7 +377,7 @@ describe("register_mint", () => {
 
   describe("invalid supply", () => {
     it("fails when mint has supply > 1", async () => {
-      const eventId = "event-register-multi-supply";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       
@@ -428,7 +434,7 @@ describe("register_mint", () => {
     });
 
     it("fails when buyer doesn't own exactly 1 token", async () => {
-      const eventId = "event-register-no-token";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       
@@ -479,7 +485,7 @@ describe("register_mint", () => {
 
   describe("tier sold out", () => {
     it("fails when tier has no remaining supply", async () => {
-      const eventId = "event-register-sold-out";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       
@@ -533,7 +539,7 @@ describe("register_mint", () => {
 
   describe("event emission", () => {
     it("emits TicketRegistered event with correct data", async () => {
-      const eventId = "event-register-emission";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       

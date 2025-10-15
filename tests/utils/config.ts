@@ -2,8 +2,8 @@ import * as dotenv from "dotenv";
 import { clusterApiUrl } from "@solana/web3.js";
 import * as path from "path";
 
-// Load environment variables
-dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+// Load environment variables from project root
+dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 export type SolanaNetwork = "localnet" | "devnet" | "testnet" | "mainnet-beta";
 

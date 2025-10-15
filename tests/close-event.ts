@@ -3,35 +3,28 @@ import { Program } from "@coral-xyz/anchor";
 import { MythraProgram } from "../target/types/mythra_program";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { assert } from "chai";
+import { initializeProvider } from "./utils/provider";
+import { setupTestEnvironment, postTestCleanup } from "./utils/test-setup";
 
 describe("close_event", () => {
-  const provider = anchor.AnchorProvider.env();
-  anchor.setProvider(provider);
+  const provider = initializeProvider();
 
   const program = anchor.workspace.MythraProgram as Program<MythraProgram>;
   const connection = provider.connection;
 
   // Test accounts
-  const organizer = anchor.web3.Keypair.generate();
+  const organizer = provider.wallet;
   const treasury = anchor.web3.Keypair.generate();
 
-  // PDA seeds
-  const eventId = "closing-event";
-  let eventPda: PublicKey;
-
   before(async () => {
-    // Airdrop SOL to accounts
-    const airdropPromises = [
-      connection.requestAirdrop(organizer.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
-      connection.requestAirdrop(treasury.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
-    ];
-    
-    const signatures = await Promise.all(airdropPromises);
-    await Promise.all(signatures.map(sig => connection.confirmTransaction(sig)));
+    await setupTestEnvironment(provider);
+  });
 
-    // Create event that has already ended
+  it("successfully closes an event with empty escrow", async () => {
+    // Create a unique event that has already ended
+    const eventId = `event-${Date.now().toString().slice(-8)}`;
     const now = Math.floor(Date.now() / 1000);
-    eventPda = PublicKey.findProgramAddressSync(
+    const eventPda = PublicKey.findProgramAddressSync(
       [Buffer.from("event"), organizer.publicKey.toBuffer(), Buffer.from(eventId)],
       program.programId
     )[0];
@@ -51,11 +44,8 @@ describe("close_event", () => {
         treasury: treasury.publicKey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([organizer])
       .rpc();
-  });
-
-  it("successfully closes an event with empty escrow", async () => {
+    
     // Get event account before closing
     const eventBefore = await program.account.event.fetch(eventPda);
     
@@ -71,7 +61,6 @@ describe("close_event", () => {
         authority: organizer.publicKey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([organizer])
       .rpc();
 
     // Verify the event account no longer exists
@@ -86,7 +75,7 @@ describe("close_event", () => {
 
   it("fails to close event before it has ended", async () => {
     // Create a new event that hasn't ended yet
-    const futureEventId = "future-event";
+    const futureEventId = `event-${Date.now().toString().slice(-8)}`;
     const futureEventPda = PublicKey.findProgramAddressSync(
       [Buffer.from("event"), organizer.publicKey.toBuffer(), Buffer.from(futureEventId)],
       program.programId
@@ -109,7 +98,6 @@ describe("close_event", () => {
         treasury: treasury.publicKey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([organizer])
       .rpc();
 
     // Attempt to close (should fail)
@@ -136,7 +124,7 @@ describe("close_event", () => {
 
   it("fails to close event with outstanding funds in escrow", async () => {
     // Create a new event
-    const fundedEventId = "funded-event";
+    const fundedEventId = `event-${Date.now().toString().slice(-8)}`;
     const fundedEventPda = PublicKey.findProgramAddressSync(
       [Buffer.from("event"), organizer.publicKey.toBuffer(), Buffer.from(fundedEventId)],
       program.programId
@@ -159,7 +147,6 @@ describe("close_event", () => {
         treasury: treasury.publicKey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([organizer])
       .rpc();
 
     // Fund the escrow account
@@ -176,7 +163,7 @@ describe("close_event", () => {
       })
     );
 
-    await anchor.web3.sendAndConfirmTransaction(connection, transferTx, [organizer]);
+    await provider.sendAndConfirm(transferTx);
 
     // Attempt to close (should fail due to funds in escrow)
     try {

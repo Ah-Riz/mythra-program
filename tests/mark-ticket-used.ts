@@ -14,12 +14,18 @@ import {
 } from "@solana/spl-token";
 import { MythraProgram } from "../target/types/mythra_program";
 import { assert } from "chai";
+import { initializeProvider } from "./utils/provider";
 
 describe("mark_ticket_used", () => {
-  const provider = anchor.AnchorProvider.env();
-  anchor.setProvider(provider);
+  const provider = initializeProvider();
 
   const program = anchor.workspace.MythraProgram as Program<MythraProgram>;
+  
+  before(async () => {
+    console.log("\n🔧 Test Environment Setup");
+    const balance = await provider.connection.getBalance(provider.wallet.publicKey);
+    console.log(`Balance: ${(balance / 1e9).toFixed(4)} SOL`);
+  });
   
   const organizer = provider.wallet;
   const buyer = Keypair.generate();
@@ -186,7 +192,7 @@ describe("mark_ticket_used", () => {
 
   describe("successful check-in", () => {
     it("marks a valid ticket as used", async () => {
-      const eventId = "event-checkin-001";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       
@@ -227,7 +233,7 @@ describe("mark_ticket_used", () => {
     });
 
     it("records the gate operator correctly", async () => {
-      const eventId = "event-checkin-operator";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       
@@ -260,7 +266,7 @@ describe("mark_ticket_used", () => {
 
   describe("non-owner attempt", () => {
     it("fails when non-owner tries to use ticket", async () => {
-      const eventId = "event-checkin-nonowner";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       
@@ -294,7 +300,7 @@ describe("mark_ticket_used", () => {
 
   describe("post-transfer attempt", () => {
     it("fails when original owner tries to use after transferring NFT", async () => {
-      const eventId = "event-checkin-transfer";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       
@@ -344,7 +350,7 @@ describe("mark_ticket_used", () => {
     });
 
     it("fails when new owner tries to use ticket after transfer", async () => {
-      const eventId = "event-checkin-newowner";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       
@@ -397,7 +403,7 @@ describe("mark_ticket_used", () => {
 
   describe("double check-in prevention", () => {
     it("fails when trying to use an already used ticket", async () => {
-      const eventId = "event-checkin-double";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       
@@ -449,7 +455,7 @@ describe("mark_ticket_used", () => {
 
   describe("event emission", () => {
     it("emits TicketUsed event with correct data", async () => {
-      const eventId = "event-checkin-emission";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       
@@ -497,7 +503,7 @@ describe("mark_ticket_used", () => {
 
   describe("edge cases", () => {
     it("records accurate check-in timestamp", async () => {
-      const eventId = "event-checkin-timestamp";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
       

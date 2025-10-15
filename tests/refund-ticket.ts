@@ -15,12 +15,18 @@ import {
 } from "@solana/spl-token";
 import { MythraProgram } from "../target/types/mythra_program";
 import { assert } from "chai";
+import { initializeProvider } from "./utils/provider";
 
 describe("refund_ticket", () => {
-  const provider = anchor.AnchorProvider.env();
-  anchor.setProvider(provider);
+  const provider = initializeProvider();
 
   const program = anchor.workspace.MythraProgram as Program<MythraProgram>;
+  
+  before(async () => {
+    console.log("\n🔧 Test Environment Setup");
+    const balance = await provider.connection.getBalance(provider.wallet.publicKey);
+    console.log(`Balance: ${(balance / 1e9).toFixed(4)} SOL`);
+  });
   
   const organizer = provider.wallet;
   const buyer = Keypair.generate();
@@ -200,7 +206,7 @@ describe("refund_ticket", () => {
 
   describe("valid refund", () => {
     it("successfully refunds a ticket before event starts", async () => {
-      const eventId = "event-refund-001";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const treasury = Keypair.generate();
       const eventPda = await createTestEvent(eventId, treasury, 2); // 2 days in future
       
@@ -284,7 +290,7 @@ describe("refund_ticket", () => {
     });
 
     it("refunds correct amount from escrow", async () => {
-      const eventId = "event-refund-amount";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const treasury = Keypair.generate();
       const eventPda = await createTestEvent(eventId, treasury, 1);
       
@@ -344,7 +350,7 @@ describe("refund_ticket", () => {
 
   describe("post-check-in rejection", () => {
     it("fails to refund a ticket that has been used", async () => {
-      const eventId = "event-refund-used";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const treasury = Keypair.generate();
       const eventPda = await createTestEvent(eventId, treasury, 1);
       
@@ -402,7 +408,7 @@ describe("refund_ticket", () => {
 
   describe("double refund prevention", () => {
     it("fails when trying to refund the same ticket twice", async () => {
-      const eventId = "event-refund-double";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const treasury = Keypair.generate();
       const eventPda = await createTestEvent(eventId, treasury, 1);
       
@@ -489,7 +495,7 @@ describe("refund_ticket", () => {
 
   describe("unauthorized attempts", () => {
     it("fails when non-authority tries to process refund", async () => {
-      const eventId = "event-refund-unauth";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const treasury = Keypair.generate();
       const eventPda = await createTestEvent(eventId, treasury, 1);
       
@@ -532,7 +538,7 @@ describe("refund_ticket", () => {
 
   describe("event timing validation", () => {
     it("fails to refund after event has started", async () => {
-      const eventId = "event-refund-started";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const treasury = Keypair.generate();
       
       // Create event that starts in the past
@@ -599,7 +605,7 @@ describe("refund_ticket", () => {
 
   describe("event emission", () => {
     it("emits TicketRefunded event with correct data", async () => {
-      const eventId = "event-refund-emission";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const treasury = Keypair.generate();
       const eventPda = await createTestEvent(eventId, treasury, 1);
       
@@ -670,7 +676,7 @@ describe("refund_ticket", () => {
 
   describe("edge cases", () => {
     it("fails when escrow has insufficient funds for refund", async () => {
-      const eventId = "event-refund-insufficient";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const treasury = Keypair.generate();
       const eventPda = await createTestEvent(eventId, treasury, 1);
       

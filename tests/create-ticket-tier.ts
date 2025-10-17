@@ -3,12 +3,23 @@ import { Program, BN } from "@coral-xyz/anchor";
 import { PublicKey, Keypair, SystemProgram } from "@solana/web3.js";
 import { MythraProgram } from "../target/types/mythra_program";
 import { assert } from "chai";
+import { initializeProvider } from "./utils/provider";
+import { setupTestEnvironment, postTestCleanup } from "./utils/test-setup";
 
 describe("create_ticket_tier", () => {
-  const provider = anchor.AnchorProvider.env();
-  anchor.setProvider(provider);
+  const provider = initializeProvider();
 
   const program = anchor.workspace.MythraProgram as Program<MythraProgram>;
+  
+  // Setup test environment
+  before(async () => {
+    await setupTestEnvironment(provider);
+  });
+
+  // Add delay between tests for rate limiting
+  afterEach(async () => {
+    await postTestCleanup(provider);
+  });
   
   const organizer = provider.wallet;
   const unauthorizedUser = Keypair.generate();
@@ -71,7 +82,7 @@ describe("create_ticket_tier", () => {
 
   describe("valid tier creation", () => {
     it("creates a ticket tier with valid parameters", async () => {
-      const eventId = "event-tier-001";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
 
@@ -120,7 +131,7 @@ describe("create_ticket_tier", () => {
     });
 
     it("creates multiple tiers for the same event", async () => {
-      const eventId = "event-multi-tier";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
 
@@ -165,7 +176,7 @@ describe("create_ticket_tier", () => {
     });
 
     it("creates tier with exact remaining supply", async () => {
-      const eventId = "event-exact-supply";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 500;
       const eventPda = await createTestEvent(eventId, totalSupply);
 
@@ -214,7 +225,7 @@ describe("create_ticket_tier", () => {
 
   describe("exceeding total supply", () => {
     it("fails when tier max_supply exceeds event total_supply", async () => {
-      const eventId = "event-exceed-single";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 100;
       const eventPda = await createTestEvent(eventId, totalSupply);
 
@@ -248,7 +259,7 @@ describe("create_ticket_tier", () => {
     });
 
     it("fails when cumulative supply across tiers exceeds total_supply", async () => {
-      const eventId = "event-exceed-cumulative";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 500;
       const eventPda = await createTestEvent(eventId, totalSupply);
 
@@ -304,7 +315,7 @@ describe("create_ticket_tier", () => {
 
   describe("invalid price", () => {
     it("fails when price_lamports is zero", async () => {
-      const eventId = "event-zero-price";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
 
@@ -340,7 +351,7 @@ describe("create_ticket_tier", () => {
 
   describe("unauthorized attempts", () => {
     it("fails when non-authority tries to create tier", async () => {
-      const eventId = "event-unauthorized-tier";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
 
@@ -384,7 +395,7 @@ describe("create_ticket_tier", () => {
 
   describe("duplicate tier PDAs", () => {
     it("fails when creating tier with duplicate tier_id", async () => {
-      const eventId = "event-duplicate-tier";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
 
@@ -437,7 +448,7 @@ describe("create_ticket_tier", () => {
 
   describe("metadata URI validation", () => {
     it("fails when metadata URI exceeds 200 characters", async () => {
-      const eventId = "event-oversized-tier-uri";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
 
@@ -472,7 +483,7 @@ describe("create_ticket_tier", () => {
     });
 
     it("succeeds with metadata URI at exactly 200 characters", async () => {
-      const eventId = "event-max-tier-uri";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
 
@@ -503,7 +514,7 @@ describe("create_ticket_tier", () => {
 
   describe("event emission", () => {
     it("emits TicketTierCreated event with correct data", async () => {
-      const eventId = "event-tier-emission";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
 
@@ -550,7 +561,7 @@ describe("create_ticket_tier", () => {
 
   describe("edge cases", () => {
     it("handles very small max_supply (1)", async () => {
-      const eventId = "event-tiny-supply";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 10;
       const eventPda = await createTestEvent(eventId, totalSupply);
 
@@ -578,7 +589,7 @@ describe("create_ticket_tier", () => {
     });
 
     it("handles zero royalty_bps", async () => {
-      const eventId = "event-zero-royalty";
+      const eventId = `event-${Date.now().toString().slice(-8)}`;
       const totalSupply = 1000;
       const eventPda = await createTestEvent(eventId, totalSupply);
 

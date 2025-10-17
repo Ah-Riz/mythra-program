@@ -3,12 +3,18 @@ import { Program, BN } from "@coral-xyz/anchor";
 import { PublicKey, Keypair, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { MythraProgram } from "../target/types/mythra_program";
 import { assert } from "chai";
+import { initializeProvider } from "./utils/provider";
 
 describe("withdraw_funds", () => {
-  const provider = anchor.AnchorProvider.env();
-  anchor.setProvider(provider);
+  const provider = initializeProvider();
 
   const program = anchor.workspace.MythraProgram as Program<MythraProgram>;
+  
+  before(async () => {
+    console.log("\n🔧 Test Environment Setup");
+    const balance = await provider.connection.getBalance(provider.wallet.publicKey);
+    console.log(`Balance: ${(balance / 1e9).toFixed(4)} SOL`);
+  });
   
   const organizer = provider.wallet;
   const unauthorizedUser = Keypair.generate();
@@ -40,24 +46,25 @@ describe("withdraw_funds", () => {
 
   // Helper to create an event
   const createTestEvent = async (eventId: string, treasury: Keypair) => {
+    const uniqueEventId = `${eventId}-${Date.now()}`;
     const metadataUri = "https://example.com/event-metadata.json";
     const startTs = new BN(Math.floor(Date.now() / 1000));
     const endTs = new BN(Math.floor(Date.now() / 1000) + 86400);
     const totalSupply = 1000;
     const platformSplitBps = 250;
 
-    const eventPda = await getEventPda(organizer.publicKey, eventId);
+    const eventPda = await getEventPda(organizer.publicKey, uniqueEventId);
 
     await program.methods
       .createEvent(
-        eventId,
+        uniqueEventId,
         metadataUri,
         startTs,
         endTs,
         totalSupply,
         platformSplitBps
       )
-      .accounts({
+      .accountsPartial({
         event: eventPda,
         organizer: organizer.publicKey,
         treasury: treasury.publicKey,
@@ -68,20 +75,17 @@ describe("withdraw_funds", () => {
     return eventPda;
   };
 
-  // Helper to fund escrow account
+  // Helper to fund escrow account (transfers from organizer instead of airdrop)
   const fundEscrow = async (escrowPda: PublicKey, amount: number) => {
-    const tx = await provider.connection.requestAirdrop(escrowPda, amount);
-    await provider.connection.confirmTransaction(tx);
-  };
-
-  before(async () => {
-    // Airdrop to unauthorized user
-    const airdropSig = await provider.connection.requestAirdrop(
-      unauthorizedUser.publicKey,
-      2 * LAMPORTS_PER_SOL
+    const tx = new anchor.web3.Transaction().add(
+      anchor.web3.SystemProgram.transfer({
+        fromPubkey: organizer.publicKey,
+        toPubkey: escrowPda,
+        lamports: amount,
+      })
     );
-    await provider.connection.confirmTransaction(airdropSig);
-  });
+    await provider.sendAndConfirm(tx);
+  };
 
   describe("successful withdrawal", () => {
     it("withdraws funds from escrow to treasury", async () => {

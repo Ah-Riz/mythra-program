@@ -3,9 +3,17 @@ pub mod ticket_tier;
 pub mod ticket;
 pub mod order;
 pub mod nonce;
+pub mod campaign;
+pub mod contribution;
+pub mod budget;
+pub mod vote;
 
 pub use event::*;
 pub use ticket_tier::*;
 pub use ticket::*;
 pub use order::*;
 pub use nonce::*;
+pub use campaign::*;
+pub use contribution::*;
+pub use budget::*;
+pub use vote::*;

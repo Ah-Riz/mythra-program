@@ -3,12 +3,18 @@ import { Program, BN } from "@coral-xyz/anchor";
 import { PublicKey, Keypair, SystemProgram } from "@solana/web3.js";
 import { MythraProgram } from "../target/types/mythra_program";
 import { assert } from "chai";
+import { initializeProvider } from "./utils/provider";
 
 describe("update_event", () => {
-  const provider = anchor.AnchorProvider.env();
-  anchor.setProvider(provider);
+  const provider = initializeProvider();
 
   const program = anchor.workspace.MythraProgram as Program<MythraProgram>;
+  
+  before(async () => {
+    console.log("\n🔧 Test Environment Setup");
+    const balance = await provider.connection.getBalance(provider.wallet.publicKey);
+    console.log(`Balance: ${(balance / 1e9).toFixed(4)} SOL`);
+  });
   
   const organizer = provider.wallet;
   const unauthorizedUser = Keypair.generate();
@@ -28,24 +34,25 @@ describe("update_event", () => {
 
   // Helper to create an event for testing
   const createTestEvent = async (eventId: string, treasury: PublicKey) => {
+    const uniqueEventId = `${eventId}-${Date.now()}`;
     const metadataUri = "https://example.com/metadata.json";
     const startTs = new BN(Math.floor(Date.now() / 1000));
     const endTs = new BN(Math.floor(Date.now() / 1000) + 86400);
     const totalSupply = 1000;
     const platformSplitBps = 250;
 
-    const eventPda = await getEventPda(organizer.publicKey, eventId);
+    const eventPda = await getEventPda(organizer.publicKey, uniqueEventId);
 
     await program.methods
       .createEvent(
-        eventId,
+        uniqueEventId,
         metadataUri,
         startTs,
         endTs,
         totalSupply,
         platformSplitBps
       )
-      .accounts({
+      .accountsPartial({
         event: eventPda,
         organizer: organizer.publicKey,
         treasury: treasury,

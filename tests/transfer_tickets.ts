@@ -4,48 +4,38 @@ import { MythraProgram } from "../target/types/mythra_program";
 import { Keypair, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID, createMint, getOrCreateAssociatedTokenAccount, mintTo } from "@solana/spl-token";
 import { assert } from "chai";
+import { initializeProvider } from "./utils/provider";
 
 describe("transfer_ticket", () => {
-  const provider = anchor.AnchorProvider.env();
-  anchor.setProvider(provider);
+  const provider = initializeProvider();
 
   const program = anchor.workspace.MythraProgram as Program<MythraProgram>;
   const connection = provider.connection;
-
-  // Test accounts
-  const organizer = anchor.web3.Keypair.generate();
-  const buyer = anchor.web3.Keypair.generate();
-  const recipient = anchor.web3.Keypair.generate();
-  const treasury = anchor.web3.Keypair.generate();
-  const platformTreasury = anchor.web3.Keypair.generate();
-
-  // PDA seeds
-  const eventId = "test-event";
-  const tierId = "vip";
-  const [eventPda] = PublicKey.findProgramAddressSync(
-    [Buffer.from("event"), organizer.publicKey.toBuffer(), Buffer.from(eventId)],
-    program.programId
-  );
-
-  // Token accounts
-  let mint: anchor.web3.PublicKey;
-  let buyerTokenAccount: anchor.web3.PublicKey;
-  let recipientTokenAccount: anchor.web3.PublicKey;
-
+  
   before(async () => {
-    // Airdrop SOL to accounts
-    const airdropPromises = [
-      connection.requestAirdrop(organizer.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
-      connection.requestAirdrop(buyer.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
-      connection.requestAirdrop(recipient.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
-      connection.requestAirdrop(treasury.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
-      connection.requestAirdrop(platformTreasury.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
-    ];
-    
-    const signatures = await Promise.all(airdropPromises);
-    await Promise.all(signatures.map(sig => connection.confirmTransaction(sig)));
+    console.log("\n🔧 Test Environment Setup");
+    const balance = await provider.connection.getBalance(provider.wallet.publicKey);
+    console.log(`Balance: ${(balance / 1e9).toFixed(4)} SOL`);
+  });
 
-    // Create event
+  // Test accounts  
+  const organizer = provider.wallet;
+  let mint: PublicKey;
+  let buyer: Keypair;
+  let recipient: Keypair;
+  let buyerTokenAccount: PublicKey;
+  let recipientTokenAccount: PublicKey;
+
+  // Helper to create unique event
+  const createTestEvent = async () => {
+    const eventId = `event-${Date.now().toString().slice(-8)}`;
+    const treasury = anchor.web3.Keypair.generate();
+    
+    const [eventPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("event"), organizer.publicKey.toBuffer(), Buffer.from(eventId)],
+      program.programId
+    );
+
     await program.methods
       .createEvent(
         eventId,
@@ -55,16 +45,24 @@ describe("transfer_ticket", () => {
         1000, // total_supply
         250 // platform_split_bps (2.5%)
       )
-      .accounts({
+      .accountsPartial({
         event: eventPda,
         organizer: organizer.publicKey,
         treasury: treasury.publicKey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([organizer])
       .rpc();
 
-    // Create ticket tier with resale enabled
+    return { eventId, eventPda, treasury };
+  };
+
+  // Helper to create tier
+  const createTestTier = async (eventPda: PublicKey, tierId: string) => {
+    const [tierPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("tier"), eventPda.toBuffer(), Buffer.from(tierId)],
+      program.programId
+    );
+    
     await program.methods
       .createTicketTier(
         tierId,
@@ -120,7 +118,9 @@ describe("transfer_ticket", () => {
       organizer,
       1 // amount
     );
-  });
+    
+    return { tierPda };
+  };
 
   it("successfully transfers a ticket", async () => {
     // Register the ticket first

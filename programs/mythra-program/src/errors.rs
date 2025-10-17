@@ -94,4 +94,116 @@ pub enum EventError {
     
     #[msg("Cannot close event with outstanding funds")]
     OutstandingFunds,
+    
+    // Campaign errors
+    #[msg("Campaign deadline must be in the future")]
+    DeadlineInPast,
+    
+    #[msg("Campaign deadline must be before event start time")]
+    DeadlineAfterEventStart,
+    
+    #[msg("Campaign deadline has passed")]
+    CampaignDeadlinePassed,
+    
+    #[msg("Campaign funding goal not reached")]
+    GoalNotReached,
+    
+    #[msg("Campaign is not active")]
+    CampaignNotActive,
+    
+    #[msg("Campaign has already been finalized")]
+    AlreadyFinalized,
+    
+    #[msg("Contribution already refunded")]
+    ContributionAlreadyRefunded,
+    
+    #[msg("Cannot refund a funded campaign")]
+    CannotRefundFundedCampaign,
+    
+    #[msg("Campaign has not been completed yet")]
+    CampaignNotCompleted,
+    
+    #[msg("Profit share already claimed")]
+    ProfitAlreadyClaimed,
+    
+    #[msg("Campaign is not funded")]
+    CampaignNotFunded,
+    
+    #[msg("Contribution amount must be greater than zero")]
+    InvalidContributionAmount,
+    
+    #[msg("Only campaign organizer can perform this action")]
+    UnauthorizedCampaignAction,
+    
+    // Budget errors
+    #[msg("Budget total exceeds campaign funds")]
+    BudgetExceedsFunds,
+    
+    #[msg("Milestone percentages must sum to 10000 (100%)")]
+    InvalidMilestonePercentages,
+    
+    #[msg("Budget description too long")]
+    BudgetDescriptionTooLong,
+    
+    #[msg("Milestone description too long")]
+    MilestoneDescriptionTooLong,
+    
+    #[msg("Voting period has ended")]
+    VotingPeriodEnded,
+    
+    #[msg("Voting period has not ended yet")]
+    VotingPeriodNotEnded,
+    
+    #[msg("Already voted on this budget")]
+    AlreadyVoted,
+    
+    #[msg("Budget is not in pending status")]
+    BudgetNotPending,
+    
+    #[msg("Budget is not approved")]
+    BudgetNotApproved,
+    
+    #[msg("Budget cannot be revised")]
+    CannotReviseBudget,
+    
+    #[msg("Maximum revisions reached")]
+    MaxRevisionsReached,
+    
+    #[msg("Milestone not ready for release")]
+    MilestoneNotReady,
+    
+    #[msg("Milestone already released")]
+    MilestoneAlreadyReleased,
+    
+    #[msg("Only contributors can vote")]
+    NotAContributor,
+    
+    // Integration errors
+    #[msg("Invalid campaign for this event")]
+    InvalidCampaign,
+    
+    #[msg("Arithmetic overflow")]
+    ArithmeticOverflow,
+    
+    // Distribution errors
+    #[msg("Distribution already calculated")]
+    DistributionAlreadyComplete,
+    
+    #[msg("Distribution not yet calculated")]
+    DistributionNotComplete,
+    
+    #[msg("Invalid campaign status for this operation")]
+    InvalidCampaignStatus,
+    
+    #[msg("Organizer has already claimed profit")]
+    OrganizerAlreadyClaimed,
+    
+    #[msg("Unauthorized claim attempt")]
+    UnauthorizedClaim,
+    
+    #[msg("Invalid contribution")]
+    InvalidContribution,
+    
+    #[msg("Invalid event")]
+    InvalidEvent,
 }

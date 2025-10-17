@@ -11,6 +11,9 @@ pub struct Event {
     pub treasury: Pubkey,         // 32 bytes
     pub platform_split_bps: u16,  // 2 bytes
     pub canceled: bool,           // 1 byte - event cancellation status
+    pub crowdfunding_enabled: bool, // 1 byte - whether this event has crowdfunding
+    pub campaign: Option<Pubkey>, // 33 bytes - link to campaign account (1 + 32)
+    pub ticket_revenue: u64,      // 8 bytes - track ticket sales separately
     pub bump: u8,                 // 1 byte
 }
 
@@ -19,8 +22,9 @@ impl Event {
     
     /// Calculate space needed for an Event account
     /// 8 (discriminator) + 32 (authority) + 4 + metadata_uri_len + 8 (start_ts) + 
-    /// 8 (end_ts) + 4 (total_supply) + 4 (allocated_supply) + 32 (treasury) + 2 (platform_split_bps) + 1 (canceled) + 1 (bump)
+    /// 8 (end_ts) + 4 (total_supply) + 4 (allocated_supply) + 32 (treasury) + 2 (platform_split_bps) + 
+    /// 1 (canceled) + 1 (crowdfunding_enabled) + 33 (campaign) + 8 (ticket_revenue) + 1 (bump)
     pub fn space(metadata_uri_len: usize) -> usize {
-        8 + 32 + (4 + metadata_uri_len) + 8 + 8 + 4 + 4 + 32 + 2 + 1 + 1
+        8 + 32 + (4 + metadata_uri_len) + 8 + 8 + 4 + 4 + 32 + 2 + 1 + 1 + 33 + 8 + 1
     }
 }

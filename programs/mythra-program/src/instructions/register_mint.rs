@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{TokenInterface, Mint, TokenAccount};
 use crate::errors::EventError;
-use crate::state::{Event, TicketTier, Ticket};
+use crate::state::{Event, TicketTier, Ticket, Campaign, CampaignStatus};
 
 #[derive(Accounts)]
 pub struct RegisterMint<'info> {
@@ -15,6 +15,7 @@ pub struct RegisterMint<'info> {
     pub ticket: Account<'info, Ticket>,
     
     #[account(
+        mut,
         has_one = authority @ EventError::UnauthorizedTierCreation
     )]
     pub event: Account<'info, Event>,
@@ -40,6 +41,9 @@ pub struct RegisterMint<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
     
+    /// Optional campaign account (required if crowdfunding_enabled)
+    pub campaign: Option<Account<'info, Campaign>>,
+    
     pub system_program: Program<'info, System>,
     pub token_program: Interface<'info, TokenInterface>,
 }
@@ -50,6 +54,30 @@ pub fn handler(
     let ticket = &mut ctx.accounts.ticket;
     let mint = &ctx.accounts.mint;
     let tier = &mut ctx.accounts.tier;
+    
+    // Get event data before mutable borrow
+    let event_key = ctx.accounts.event.key();
+    let crowdfunding_enabled = ctx.accounts.event.crowdfunding_enabled;
+    let event_campaign = ctx.accounts.event.campaign;
+    
+    // If crowdfunding is enabled, verify campaign is funded
+    if crowdfunding_enabled {
+        let campaign = ctx.accounts.campaign.as_ref()
+            .ok_or(EventError::CampaignNotFunded)?;
+        
+        require!(
+            campaign.status == CampaignStatus::Funded,
+            EventError::CampaignNotFunded
+        );
+        
+        // Verify campaign matches event
+        require!(
+            event_campaign == Some(campaign.key()),
+            EventError::InvalidCampaign
+        );
+    }
+    
+    let event = &mut ctx.accounts.event;
     
     // Validation: mint supply must be exactly 1
     require!(
@@ -70,7 +98,7 @@ pub fn handler(
     
     // Store ticket data
     ticket.owner = ctx.accounts.buyer.key();
-    ticket.event = ctx.accounts.event.key();
+    ticket.event = event_key;
     ticket.tier = tier.key();
     ticket.mint = mint.key();
     ticket.used = false;
@@ -80,10 +108,17 @@ pub fn handler(
     ticket.refund_ts = 0;
     ticket.bump = ctx.bumps.ticket;
     
+    // Track ticket revenue (tier price)
+    event.ticket_revenue = event.ticket_revenue
+        .checked_add(tier.price_lamports)
+        .ok_or(EventError::ArithmeticOverflow)?;
+    
+    msg!("Ticket revenue updated: {} lamports", event.ticket_revenue);
+    
     // Emit TicketRegistered event
     emit!(TicketRegistered {
         ticket_pubkey: ticket.key(),
-        event_pubkey: ctx.accounts.event.key(),
+        event_pubkey: event_key,
         tier_pubkey: tier.key(),
         mint_pubkey: mint.key(),
         owner: ticket.owner,

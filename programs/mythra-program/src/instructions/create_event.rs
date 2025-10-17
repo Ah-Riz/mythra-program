@@ -61,6 +61,10 @@ pub fn handler(
     event.allocated_supply = 0; // Initialize to 0, incremented when tiers are created
     event.treasury = ctx.accounts.treasury.key();
     event.platform_split_bps = platform_split_bps;
+    event.canceled = false;
+    event.crowdfunding_enabled = false; // Will be set to true if campaign created
+    event.campaign = None;
+    event.ticket_revenue = 0;
     event.bump = ctx.bumps.event;
     
     // Emit EventCreated event

@@ -3,15 +3,36 @@ import { Program, BN } from "@coral-xyz/anchor";
 import { PublicKey, Keypair, SystemProgram } from "@solana/web3.js";
 import { MythraProgram } from "../target/types/mythra_program";
 import { assert, expect } from "chai";
+import { initializeProvider } from "./utils/provider";
+import { setupTestEnvironment, postTestCleanup } from "./utils/test-setup";
 
 describe("create_event", () => {
-  const provider = anchor.AnchorProvider.env();
-  anchor.setProvider(provider);
+  const provider = initializeProvider();
 
   const program = anchor.workspace.MythraProgram as Program<MythraProgram>;
 
   const organizer = provider.wallet;
   const treasury = Keypair.generate();
+
+  // Setup test environment
+  before(async () => {
+    console.log("\n🔧 Test Environment Setup");
+    console.log(`Network: devnet`);
+    console.log(`RPC: ${provider.connection.rpcEndpoint.slice(0, 50)}...`);
+    console.log(`Wallet: ${provider.wallet.publicKey.toBase58()}`);
+    
+    const balance = await provider.connection.getBalance(provider.wallet.publicKey);
+    console.log(`Balance: ${(balance / 1e9).toFixed(4)} SOL`);
+    
+    if (balance < 1e9) {
+      console.warn(`⚠️  Low balance! You may need to fund your wallet.`);
+    }
+  });
+
+  // Add delay between tests for rate limiting
+  afterEach(async () => {
+    await postTestCleanup(provider);
+  });
 
   // Helper function to derive event PDA
   const getEventPda = async (organizerPubkey: PublicKey, eventId: string) => {
@@ -24,7 +45,7 @@ describe("create_event", () => {
 
   describe("successful event creation", () => {
     it("creates an event with valid parameters", async () => {
-      const eventId = "event-001";
+      const eventId = `event-${Date.now()}`;
       const metadataUri = "https://example.com/metadata.json";
       const startTs = new BN(Math.floor(Date.now() / 1000));
       const endTs = new BN(Math.floor(Date.now() / 1000) + 86400); // +1 day
@@ -42,7 +63,7 @@ describe("create_event", () => {
           totalSupply,
           platformSplitBps
         )
-        .accounts({
+        .accountsPartial({
           event: eventPda,
           organizer: organizer.publicKey,
           treasury: treasury.publicKey,
@@ -71,7 +92,7 @@ describe("create_event", () => {
       const endTs = new BN(Math.floor(Date.now() / 1000) + 86400);
 
       for (let i = 0; i < 3; i++) {
-        const eventId = `event-multi-${i}`;
+        const eventId = `event-multi-${Date.now()}-${i}`;
         const eventPda = await getEventPda(organizer.publicKey, eventId);
 
         await program.methods
@@ -83,7 +104,7 @@ describe("create_event", () => {
             100 + i,
             250
           )
-          .accounts({
+          .accountsPartial({
             event: eventPda,
             organizer: organizer.publicKey,
             treasury: treasury.publicKey,
@@ -99,7 +120,7 @@ describe("create_event", () => {
 
   describe("duplicate event creation", () => {
     it("fails when creating an event with a duplicate event ID", async () => {
-      const eventId = "event-duplicate";
+      const eventId = `event-dup-${Date.now().toString().slice(-6)}`;
       const metadataUri = "https://example.com/metadata.json";
       const startTs = new BN(Math.floor(Date.now() / 1000));
       const endTs = new BN(Math.floor(Date.now() / 1000) + 86400);
@@ -118,7 +139,7 @@ describe("create_event", () => {
           totalSupply,
           platformSplitBps
         )
-        .accounts({
+        .accountsPartial({
           event: eventPda,
           organizer: organizer.publicKey,
           treasury: treasury.publicKey,
@@ -137,7 +158,7 @@ describe("create_event", () => {
             totalSupply,
             platformSplitBps
           )
-          .accounts({
+          .accountsPartial({
             event: eventPda,
             organizer: organizer.publicKey,
             treasury: treasury.publicKey,
@@ -155,7 +176,7 @@ describe("create_event", () => {
 
   describe("invalid timestamps", () => {
     it("fails when start_ts >= end_ts", async () => {
-      const eventId = "event-invalid-timestamps";
+      const eventId = `event-invts-${Date.now().toString().slice(-6)}`;
       const metadataUri = "https://example.com/metadata.json";
       const startTs = new BN(Math.floor(Date.now() / 1000) + 86400);
       const endTs = new BN(Math.floor(Date.now() / 1000)); // End before start
@@ -174,7 +195,7 @@ describe("create_event", () => {
             totalSupply,
             platformSplitBps
           )
-          .accounts({
+          .accountsPartial({
             event: eventPda,
             organizer: organizer.publicKey,
             treasury: treasury.publicKey,
@@ -192,7 +213,7 @@ describe("create_event", () => {
     });
 
     it("fails when start_ts equals end_ts", async () => {
-      const eventId = "event-equal-timestamps";
+      const eventId = `event-eqts-${Date.now().toString().slice(-6)}`;
       const metadataUri = "https://example.com/metadata.json";
       const timestamp = new BN(Math.floor(Date.now() / 1000));
       const totalSupply = 1000;
@@ -210,7 +231,7 @@ describe("create_event", () => {
             totalSupply,
             platformSplitBps
           )
-          .accounts({
+          .accountsPartial({
             event: eventPda,
             organizer: organizer.publicKey,
             treasury: treasury.publicKey,
@@ -230,7 +251,7 @@ describe("create_event", () => {
 
   describe("zero supply validation", () => {
     it("fails when total_supply is zero", async () => {
-      const eventId = "event-zero-supply";
+      const eventId = `event-zero-${Date.now().toString().slice(-6)}`;
       const metadataUri = "https://example.com/metadata.json";
       const startTs = new BN(Math.floor(Date.now() / 1000));
       const endTs = new BN(Math.floor(Date.now() / 1000) + 86400);
@@ -249,7 +270,7 @@ describe("create_event", () => {
             totalSupply,
             platformSplitBps
           )
-          .accounts({
+          .accountsPartial({
             event: eventPda,
             organizer: organizer.publicKey,
             treasury: treasury.publicKey,
@@ -266,7 +287,7 @@ describe("create_event", () => {
 
   describe("oversized metadata URI", () => {
     it("fails when metadata URI exceeds 200 characters", async () => {
-      const eventId = "event-oversized-uri";
+      const eventId = `event-uri-${Date.now().toString().slice(-6)}`;
       // Create a metadata URI with 201 characters
       const metadataUri = "https://example.com/" + "a".repeat(201);
       const startTs = new BN(Math.floor(Date.now() / 1000));
@@ -286,7 +307,7 @@ describe("create_event", () => {
             totalSupply,
             platformSplitBps
           )
-          .accounts({
+          .accountsPartial({
             event: eventPda,
             organizer: organizer.publicKey,
             treasury: treasury.publicKey,
@@ -306,7 +327,7 @@ describe("create_event", () => {
     });
 
     it("succeeds when metadata URI is exactly 200 characters", async () => {
-      const eventId = "event-max-uri";
+      const eventId = `event-max-${Date.now().toString().slice(-6)}`;
       // Create a metadata URI with exactly 200 characters
       const metadataUri = "https://example.com/" + "a".repeat(180); // 20 + 180 = 200
       const startTs = new BN(Math.floor(Date.now() / 1000));
@@ -325,7 +346,7 @@ describe("create_event", () => {
           totalSupply,
           platformSplitBps
         )
-        .accounts({
+        .accountsPartial({
           event: eventPda,
           organizer: organizer.publicKey,
           treasury: treasury.publicKey,
@@ -340,7 +361,7 @@ describe("create_event", () => {
 
   describe("event emission", () => {
     it("emits EventCreated event with correct data", async () => {
-      const eventId = "event-emission-test";
+      const eventId = `event-emit-${Date.now().toString().slice(-6)}`;
       const metadataUri = "https://example.com/metadata.json";
       const startTs = new BN(Math.floor(Date.now() / 1000));
       const endTs = new BN(Math.floor(Date.now() / 1000) + 86400);
@@ -351,7 +372,7 @@ describe("create_event", () => {
 
       // Listen for events
       let eventEmitted = false;
-      const listener = program.addEventListener("EventCreated", (event) => {
+      const listener = program.addEventListener("eventCreated", (event) => {
         assert.ok(event.eventPubkey.equals(eventPda));
         assert.ok(event.authority.equals(organizer.publicKey));
         assert.equal(event.metadataUri, metadataUri);
@@ -368,7 +389,7 @@ describe("create_event", () => {
           totalSupply,
           platformSplitBps
         )
-        .accounts({
+        .accountsPartial({
           event: eventPda,
           organizer: organizer.publicKey,
           treasury: treasury.publicKey,

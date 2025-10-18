@@ -140,7 +140,9 @@ mod tests {
     #[test]
     fn test_campaign_len() {
         // Verify our LEN calculation is correct
-        assert!(Campaign::LEN >= 200);
+        // Campaign::LEN = 8 + 32 + 32 + 8 + 8 + 8 + 1 + 4 + 8 + 8 + 8 + 8 + 8 + 8 + 1 + 1 + 1 = 152
+        assert_eq!(Campaign::LEN, 152);
+        assert!(Campaign::LEN >= 150); // Reasonable minimum
     }
     
     #[test]

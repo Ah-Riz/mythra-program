@@ -48,8 +48,18 @@ pub fn handler(ctx: Context<ClaimBackerProfit>) -> Result<()> {
     msg!("Backer pool: {} lamports", campaign.backer_pool);
     msg!("Backer share: {} lamports", share);
     
+    // Mark as claimed
+    contribution.profit_claimed = true;
+    
     // If there's profit to claim, transfer it
     if share > 0 {
+        // Validate escrow has sufficient balance
+        let escrow_balance = ctx.accounts.campaign_escrow.lamports();
+        require!(
+            escrow_balance >= share,
+            EventError::InsufficientBalance
+        );
+
         let campaign_key = campaign.key();
         let seeds = &[
             b"campaign_escrow",
@@ -73,9 +83,6 @@ pub fn handler(ctx: Context<ClaimBackerProfit>) -> Result<()> {
     } else {
         msg!("No profit to claim (loss scenario)");
     }
-    
-    // Mark as claimed
-    contribution.profit_claimed = true;
     
     Ok(())
 }

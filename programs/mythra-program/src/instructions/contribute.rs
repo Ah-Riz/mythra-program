@@ -56,7 +56,7 @@ pub fn handler(
     
     // Update campaign totals
     campaign.total_raised += amount;
-    campaign.total_contributors += 1;
+    campaign.total_contributors = campaign.total_contributors.checked_add(1).ok_or(EventError::ArithmeticOverflow)?;
     
     msg!(
         "Contribution received: {} lamports from {} (Total raised: {} / {})",

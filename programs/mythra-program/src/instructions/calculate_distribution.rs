@@ -70,13 +70,29 @@ pub fn handler(ctx: Context<CalculateDistribution>) -> Result<()> {
             .checked_div(100)
             .ok_or(EventError::ArithmeticOverflow)?;
         
-        campaign.backer_pool = backer_pool;
-        campaign.organizer_pool = organizer_pool;
-        campaign.platform_pool = platform_pool;
-        
-        msg!("Backer pool (60%): {} lamports", backer_pool);
-        msg!("Organizer pool (35%): {} lamports", organizer_pool);
-        msg!("Platform pool (5%): {} lamports", platform_pool);
+        let distributed = backer_pool
+    .checked_add(organizer_pool)
+    .ok_or(EventError::ArithmeticOverflow)?
+    .checked_add(platform_pool)
+    .ok_or(EventError::ArithmeticOverflow)?;
+
+    let remainder = profit
+        .checked_sub(distributed)
+        .ok_or(EventError::ArithmeticOverflow)?;
+
+    // Give remainder to backers
+    let backer_pool = backer_pool
+        .checked_add(remainder)
+        .ok_or(EventError::ArithmeticOverflow)?;
+
+    campaign.backer_pool = backer_pool;
+    campaign.organizer_pool = organizer_pool;
+    campaign.platform_pool = platform_pool;
+
+    msg!("Backer pool (60% + remainder): {} lamports", backer_pool);
+    msg!("Organizer pool (35%): {} lamports", organizer_pool);
+    msg!("Platform pool (5%): {} lamports", platform_pool);
+    msg!("Remainder allocated to backers: {} lamports", remainder);
     } else {
         // LOSS scenario - no profit to distribute
         let loss = expenses

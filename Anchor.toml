@@ -17,7 +17,7 @@ mythra_program = "3STUXGoh2tGAcsLofsZM8seXdNH6K1AoijdNvxTCMULd"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

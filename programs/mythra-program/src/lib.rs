@@ -61,6 +61,12 @@ pub mod mythra_program {
         )
     }
     
+    pub fn purchase_ticket(
+        ctx: Context<PurchaseTicket>,
+    ) -> Result<()> {
+        instructions::purchase_ticket::handler(ctx)
+    }
+    
     pub fn register_mint(
         ctx: Context<RegisterMint>,
     ) -> Result<()> {

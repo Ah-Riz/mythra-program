@@ -1,6 +1,7 @@
 pub mod create_event;
 pub mod update_event;
 pub mod create_ticket_tier;
+pub mod purchase_ticket;
 pub mod register_mint;
 pub mod mark_ticket_used;
 pub mod mark_ticket_used_ed25519;
@@ -24,6 +25,7 @@ pub mod claim_organizer_profit;
 pub use create_event::*;
 pub use update_event::*;
 pub use create_ticket_tier::*;
+pub use purchase_ticket::*;
 pub use register_mint::*;
 pub use mark_ticket_used::*;
 pub use mark_ticket_used_ed25519::*;

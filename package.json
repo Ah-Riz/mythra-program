@@ -2,7 +2,12 @@
   "license": "ISC",
   "scripts": {
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
-    "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
+    "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
+    "test": "npx ts-mocha -p ./tsconfig.json -t 1000000 'tests/actors/*.test.ts'",
+    "test:organizer": "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/actors/event-organizer.test.ts",
+    "test:customer": "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/actors/customer.test.ts",
+    "test:investor": "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/actors/investor-dao.test.ts",
+    "test:platform": "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/actors/mythra-platform.test.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",

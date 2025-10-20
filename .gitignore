@@ -40,3 +40,11 @@ devnet-test-run.log
 .vscode/
 .idea/
 *.iml
+
+# Documentation (except README.md)
+docs/
+*.md
+!README.md
+
+# Frontend integration (removed from repo)
+frontend-integration/

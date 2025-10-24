@@ -250,5 +250,3 @@ All tests should:
 - ✅ Be maintainable & documented
 
 ---
-
-**Ready to test? Run `npm test` to execute the full suite! 🚀**
